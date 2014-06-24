@@ -3,8 +3,8 @@
 #              _           ___                #
 #    ___ ___  (_)__  ___  / _ \               #
 #   (_-</ _ \/ / _ \/ _ \/ , _/               #
-#  /___/ .__/_/_//_/_//_/_/|_|                #
-#     /_/                       0.1.0-alpha   #
+#  /___/ .__/_/_//_/_//_/_/|_|  0.2.0         #
+#     /_/                                     #
 #           Gregory Werbin                    #
 #             github.com/gwerbin/spinnr       #
 ###############################################
@@ -81,6 +81,18 @@
 # progress display, and more powerful spinner-editing
 # functions.
 # 
+# CHANGELOG
+#==============
+#
+# 0.2.0
+#   - added functionality to step() by a fraction,
+#      e.g step(1/5) to step every 5th loop
+#   - basic error catching: steps must be positive
+#      (this restriction will be removed in the future)
+#
+# 0.1.0-alpha:
+#   - initial release
+#
 # TO DO 
 #==============
 # - finish documentation and look into making a real package / requirements for CRAN
@@ -171,11 +183,11 @@ spinner = function(style="basic", initial=1, percent=TRUE, pmin=0, pmax=1, pby=N
 }
 
 step.spinner = function(.spinner_object, nsteps=1){
-	
+	if(nsteps<0) stop("nsteps must be non-negative (for now)")
 	style = attr(.spinner_object,"style")
 	spinner_frames = .spinner.styles[[style]]
 	.n = length(spinner_frames)
-	step_to = ( .spinner_object$getStep + nsteps ) %% .n + 1
+	step_to = ( trunc(.spinner_object$getStep) + nsteps ) %% .n + 1
 
 	if( !identical(.spinner_object$pct, FALSE) ){
 		newpct = (.spinner_object$pct["getPct"] + .spinner_object$pct["pby"])
@@ -188,7 +200,7 @@ step.spinner = function(.spinner_object, nsteps=1){
 		flush.console()
 	}
 
-	.spinner_object$getStep <- step_to
+	.spinner_object$getStep <- .spinner_object$getStep + nsteps
 	if( !identical(.spinner_object$pct, FALSE) )
 		.spinner_object$pct["getPct"] <- newpct
 	return(.spinner_object)
