@@ -3,7 +3,7 @@
 #              _           ___                #
 #    ___ ___  (_)__  ___  / _ \               #
 #   (_-</ _ \/ / _ \/ _ \/ , _/               #
-#  /___/ .__/_/_//_/_//_/_/|_|  0.2.0         #
+#  /___/ .__/_/_//_/_//_/_/|_|  0.3.0-beta-1  #
 #     /_/                                     #
 #           Gregory Werbin                    #
 #             github.com/gwerbin/spinnr       #
@@ -84,6 +84,18 @@
 # CHANGELOG
 #==============
 #
+# 0.3.0 (beta-1)
+#   - added to To Do
+#
+# 0.3.0 (beta)
+#   - added separate step control for percentage with
+#      fraction functionality, e.g. to prevent "flying
+#      through" numbers in case you don't want that
+#
+# 0.2.1
+#   - fixed integer percentages not overwriting decimals
+#   - removed a line of code that wasn't supposed to be there
+#
 # 0.2.0
 #   - added functionality to step() by a fraction,
 #      e.g step(1/5) to step every 5th loop
@@ -95,6 +107,11 @@
 #
 # TO DO 
 #==============
+# - get onto GitHub / install_packages("spinnr", "gwerbin")
+# - integrate pingr()
+# - integrate into plyr()
+# - pass functionality out of step.spinner() and into auxiliary functions
+#    to prevent nontrivial speed loss as functionality expands
 # - finish documentation and look into making a real package / requirements for CRAN
 # - "lady-and-the-tramp" :-) @o@ (-:  :-)~@o@~(-:  :-)~~~~(-:  :-)~~(-: :-)~(-: :-**-:  
 # - "dio" \m/ -m-
@@ -115,7 +132,7 @@
 step.default = stats::step
 step = function(...) UseMethod("step")
 
-cat(.maskedMsg("step", "‘package:stats’", by=F),"\n")
+cat(.maskedMsg("step", "?package:stats?", by=F),"\n")
 
 paste00 = function(...) paste0(...,collapse="")
 
@@ -126,11 +143,11 @@ paste00 = function(...) paste0(...,collapse="")
 newSpinner = function( name, frames ){
 	nc = nchar(frames)
 	if( !all( nc == nc[1] ) ){
-		.t = readline(sprintf("Not all frames are the same length. This could look ugly.\nAre you sure you want to add spinner ‘%s’? y/n: ",name))
+		.t = readline(sprintf("Not all frames are the same length. This could look ugly.\nAre you sure you want to add spinner ?%s?? y/n: ",name))
 		.t = grepl("^y",.t)
 	} else .t = TRUE
 	if( .t == TRUE ) .spinner.styles[[name]] <<- frames
-	cat(sprintf("Created spinner ‘%s’."))
+	cat(sprintf("Created spinner ?%s?."))
 }
 
 editSpinner = function( name, indices=NULL, newframes ){
@@ -139,14 +156,14 @@ editSpinner = function( name, indices=NULL, newframes ){
 	nc1 = nchar(.spinner.styles[["name"]][1])
 	if( is.null(indices) ) indices = seq_along(.spinner.styles[["name"]])
 	if( !all( nc_new == nc1 ) ){
-		.t = readline(sprintf("Not all new frames are the same length as the old frame 1. This could look ugly.\nAre you sure you want to add spinner ‘%s’? y/n: ",name))
+		.t = readline(sprintf("Not all new frames are the same length as the old frame 1. This could look ugly.\nAre you sure you want to add spinner ?%s?? y/n: ",name))
 		.t = grepl("^y",.t)
-	} else .t = readline(sprintf("Are you sure you want to edit spinner ‘%s’? y/n: ",name))
+	} else .t = readline(sprintf("Are you sure you want to edit spinner ?%s?? y/n: ",name))
 	if( .t == TRUE ) .spinner.styles[[name]][indices] <<- newframes
 }
 
 rmSpinner = function( name , force=FALSE ){
-	.t = readline(sprintf("Are you sure you want to remove spinner ‘%s’? y/n: ",name))
+	.t = readline(sprintf("Are you sure you want to remove spinner ?%s?? y/n: ",name))
 	if( force==TRUE || grepl("^y",.t) ) .spinner.styles[[name]] <<- NULL
 	else warn("Nothing changed.\n")
 }
@@ -182,7 +199,7 @@ spinner = function(style="basic", initial=1, percent=TRUE, pmin=0, pmax=1, pby=N
 			class = "spinner" )
 }
 
-step.spinner = function(.spinner_object, nsteps=1){
+step.spinner = function(.spinner_object, nsteps=1, psteps=1){
 	if(nsteps<0) stop("nsteps must be non-negative (for now)")
 	style = attr(.spinner_object,"style")
 	spinner_frames = .spinner.styles[[style]]
@@ -190,10 +207,11 @@ step.spinner = function(.spinner_object, nsteps=1){
 	step_to = ( trunc(.spinner_object$getStep) + nsteps ) %% .n + 1
 
 	if( !identical(.spinner_object$pct, FALSE) ){
-		newpct = (.spinner_object$pct["getPct"] + .spinner_object$pct["pby"])
-		newpct = newpct
+		# figure out a way to quickly map pct to integers and back
+		newpct = .spinner_object$pct["getPct"] + .spinner_object$pct["pby"]
 		display_percent = round(100*newpct/.spinner_object$pct["pmax"],2)
-		cat(sprintf( "\r%s    %s%%",spinner_frames[step_to],display_percent ))
+		spaces = ""; if ( display_percent == as.integer(display_percent) ) spaces="  "
+		cat(sprintf( "\r%s    %s%%%s",spinner_frames[step_to],display_percent,spaces ))
 		flush.console()
 	} else{
 		cat(sprintf( "\r%s",spinner_frames[step_to] ))
@@ -205,7 +223,6 @@ step.spinner = function(.spinner_object, nsteps=1){
 		.spinner_object$pct["getPct"] <- newpct
 	return(.spinner_object)
 }
-spinner() -> sp1
 
 close.spinner = function( con, ... ){
     con$kill()
